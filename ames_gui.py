@@ -1,82 +1,250 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 import pandas as pd
 import joblib
+from pathlib import Path
 
-# Load the trained model
-model = joblib.load("model.pkl")
+# Load trained model
+model = joblib.load(Path(__file__).with_name("model.pkl"))
 
-# Dictionary for tooltips (feature descriptions)
-tooltips = {
-    'LotArea': 'Lot size in square feet',
-    'OverallQual': 'Overall material and finish quality (1-10)',
-    'OverallCond': 'Overall condition rating (1-10)',
-    'YearBuilt': 'Original construction year',
-    'YearRemodAdd': 'Remodel year',
-    'MasVnrArea': 'Masonry veneer area in sq ft',
-    'BsmtFinSF1': 'Basement finished area in sq ft',
-    'TotalBsmtSF': 'Total basement area in sq ft',
-    'GrLivArea': 'Above grade (ground) living area in sq ft',
-    'GarageCars': 'Size of garage in car capacity'
-}
+# Main window
+root = tk.Tk()
+root.title("Ames House Price Prediction")
+root.geometry("650x680")
+root.resizable(False, False)
+root.configure(bg="#F1F5F9")
 
-# Function to display tooltip
-def show_tooltip(text):
-    tooltip_label.config(text=text)
+# Colors
+NAVY = "#142D4E"
+BLUE = "#2563EB"
+WHITE = "#FFFFFF"
+BG = "#F1F5F9"
+TEXT = "#26364A"
+GREY = "#64748B"
 
-# Function to predict house price
+# Header
+header = tk.Frame(root, bg=NAVY, height=125)
+header.pack(fill="x")
+header.pack_propagate(False)
+
+tk.Label(
+    header,
+    text="🏠  Ames House Price Predictor",
+    font=("Segoe UI", 22, "bold"),
+    bg=NAVY,
+    fg=WHITE
+).pack(pady=(22, 5))
+
+tk.Label(
+    header,
+    text="Estimate your property's market value",
+    font=("Segoe UI", 10),
+    bg=NAVY,
+    fg="#CBD5E1"
+).pack()
+
+# Main card
+card = tk.Frame(
+    root,
+    bg=WHITE,
+    padx=35,
+    pady=22,
+    highlightbackground="#E2E8F0",
+    highlightthickness=1
+)
+card.pack(padx=45, pady=25, fill="both")
+
+tk.Label(
+    card,
+    text="Property Details",
+    font=("Segoe UI", 17, "bold"),
+    bg=WHITE,
+    fg=NAVY
+).pack(anchor="w")
+
+tk.Label(
+    card,
+    text="Enter the following information about your house.",
+    font=("Segoe UI", 9),
+    bg=WHITE,
+    fg=GREY
+).pack(anchor="w", pady=(3, 18))
+
+# Input fields
+fields = [
+    ("Plot Area (sq. ft.)", "LotArea", "entry"),
+    ("House Quality (1-10)", "OverallQual", "quality"),
+    ("Year of Construction", "YearBuilt", "year"),
+    ("Living Area (sq. ft.)", "GrLivArea", "entry"),
+    ("Garage Capacity (Cars)", "GarageCars", "garage")
+]
+
+entries = {}
+
+style = ttk.Style()
+style.theme_use("clam")
+
+style.configure(
+    "Custom.TEntry",
+    fieldbackground="#F8FAFC",
+    padding=9,
+    font=("Segoe UI", 10)
+)
+
+style.configure(
+    "Custom.TCombobox",
+    fieldbackground="#F8FAFC",
+    padding=7,
+    font=("Segoe UI", 10)
+)
+
+for label_text, feature, field_type in fields:
+
+    row = tk.Frame(card, bg=WHITE)
+    row.pack(fill="x", pady=7)
+
+    tk.Label(
+        row,
+        text=label_text,
+        font=("Segoe UI", 10, "bold"),
+        bg=WHITE,
+        fg=TEXT,
+        width=25,
+        anchor="w"
+    ).pack(side="left")
+
+    if field_type == "quality":
+        widget = ttk.Combobox(
+            row,
+            values=list(range(1, 11)),
+            state="readonly",
+            style="Custom.TCombobox",
+            width=22
+        )
+        widget.set("7")
+
+    elif field_type == "garage":
+        widget = ttk.Combobox(
+            row,
+            values=[0, 1, 2, 3, 4],
+            state="readonly",
+            style="Custom.TCombobox",
+            width=22
+        )
+        widget.set("2")
+
+    else:
+        widget = ttk.Entry(
+            row,
+            style="Custom.TEntry",
+            width=25
+        )
+
+        if feature == "LotArea":
+            widget.insert(0, "8450")
+        elif feature == "YearBuilt":
+            widget.insert(0, "2000")
+        elif feature == "GrLivArea":
+            widget.insert(0, "1500")
+
+    widget.pack(side="right")
+    entries[feature] = widget
+
+
+# Prediction function
+
 def predict_price():
     try:
         features = {
-            'LotArea': float(lotarea_entry.get()),
-            'OverallQual': int(overallqual_entry.get()),
-            'OverallCond': int(overallcond_entry.get()),
-            'YearBuilt': int(yearbuilt_entry.get()),
-            'YearRemodAdd': int(yearremod_entry.get()),
-            'MasVnrArea': float(masvnr_entry.get()),
-            'BsmtFinSF1': float(bsmtfin_entry.get()),
-            'TotalBsmtSF': float(totalbsmt_entry.get()),
-            'GrLivArea': float(grliv_entry.get()),
-            'GarageCars': int(garage_entry.get())
+            "LotArea": float(entries["LotArea"].get()),
+            "OverallQual": int(entries["OverallQual"].get()),
+            "YearBuilt": int(entries["YearBuilt"].get()),
+            "GrLivArea": float(entries["GrLivArea"].get()),
+            "GarageCars": int(entries["GarageCars"].get())
         }
+
         df = pd.DataFrame([features])
         prediction = model.predict(df)[0]
-        messagebox.showinfo("Prediction", f"Predicted House Price: ${prediction:,.2f}")
-    except ValueError:
-        messagebox.showerror("Error", "Please enter valid numeric values for all fields.")
 
-# Create main window
-root = tk.Tk()
-root.title("🏠 Ames House Price Predictor")
-root.geometry("450x500")
-root.resizable(False, False)
+        price_text = f"${prediction:,.2f}"
 
-# Title label
-tk.Label(root, text="Ames Housing Price Predictor", font=("Helvetica", 16, "bold"), fg="blue").pack(pady=10)
+        print("Prediction calculated:", price_text)
 
-# Frame for input fields
-frame = tk.Frame(root)
-frame.pack(pady=10)
+        # Update GUI label
+        result_label.config(
+            text=price_text,
+            fg="green",
+            font=("Segoe UI", 22, "bold")
+        )
 
-# Create labels and entries
-entries = []
-for i, (feature, desc) in enumerate(tooltips.items()):
-    tk.Label(frame, text=feature+":").grid(row=i, column=0, sticky='w', padx=10, pady=5)
-    entry = tk.Entry(frame)
-    entry.grid(row=i, column=1, padx=10, pady=5)
-    entry.bind("<Enter>", lambda e, text=desc: show_tooltip(text))
-    entry.bind("<Leave>", lambda e: show_tooltip(""))
-    entries.append(entry)
+        # Force GUI refresh
+        result_label.pack()
+        root.update()
 
-(lotarea_entry, overallqual_entry, overallcond_entry, yearbuilt_entry, yearremod_entry,
- masvnr_entry, bsmtfin_entry, totalbsmt_entry, grliv_entry, garage_entry) = entries
+        # Temporary confirmation popup
+        messagebox.showinfo(
+            "Prediction Successful",
+            f"Predicted House Price: {price_text}"
+        )
 
-# Tooltip label
-tooltip_label = tk.Label(root, text="", fg="green", wraplength=400, justify="left")
-tooltip_label.pack(pady=5)
+    except Exception as e:
+        messagebox.showerror("Prediction Error", str(e))
+
+
 
 # Predict button
-tk.Button(root, text="Predict Price", command=predict_price, bg="lightblue", font=("Helvetica", 12, "bold")).pack(pady=15)
+predict_button = tk.Button(
+    card,
+    text="Predict House Price  →",
+    command=predict_price,
+    font=("Segoe UI", 11, "bold"),
+    bg=BLUE,
+    fg=WHITE,
+    activebackground="#1D4ED8",
+    activeforeground=WHITE,
+    relief="flat",
+    cursor="hand2",
+    padx=25,
+    pady=12
+)
+predict_button.pack(pady=(25, 15))
 
-# Run GUI loop
+# Result section
+result_frame = tk.Frame(
+    card,
+    bg="#F0FDF4",
+    padx=15,
+    pady=12
+)
+result_frame.pack(fill="x")
+
+tk.Label(
+    result_frame,
+    text="ESTIMATED HOUSE PRICE",
+    font=("Segoe UI", 9, "bold"),
+    bg="#F0FDF4",
+    fg=GREY
+).pack()
+
+result_var = tk.StringVar()
+result_var.set("Your prediction will appear here")
+
+result_label = tk.Label(
+    result_frame,
+    textvariable=result_var,
+    font=("Segoe UI", 17, "bold"),
+    bg="#F0FDF4",
+    fg="#26364A"
+)
+result_label.pack(pady=5)
+
+# Footer
+tk.Label(
+    root,
+    text="Powered by Machine Learning | XGBoost Regressor",
+    font=("Segoe UI", 9),
+    bg=BG,
+    fg=GREY
+).pack(pady=5)
+
 root.mainloop()
