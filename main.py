@@ -12,12 +12,7 @@ model = joblib.load("model.pkl")
 class HouseFeatures(BaseModel):
     LotArea: float
     OverallQual: int
-    OverallCond: int
     YearBuilt: int
-    YearRemodAdd: int
-    MasVnrArea: float
-    BsmtFinSF1: float
-    TotalBsmtSF: float
     GrLivArea: float
     GarageCars: int
 
@@ -33,4 +28,5 @@ def predict(features: HouseFeatures):
     df = pd.DataFrame([data])
     prediction = model.predict(df)[0]
     return {"prediction": float(prediction)}
+
 
