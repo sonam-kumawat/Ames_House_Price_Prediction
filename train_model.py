@@ -11,8 +11,13 @@ data = fetch_openml(data_id=42165, as_frame=True)
 df = data.frame
 
 # Select 10 important features + target
-features = ['LotArea','OverallQual','OverallCond','YearBuilt','YearRemodAdd',
-            'MasVnrArea','BsmtFinSF1','TotalBsmtSF','GrLivArea','GarageCars']
+features = [
+    'LotArea',
+    'OverallQual',
+    'YearBuilt',
+    'GrLivArea',
+    'GarageCars'
+]
 X = df[features]
 y = df['SalePrice']
 
